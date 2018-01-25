@@ -2,9 +2,9 @@
 #include <Arduino.h>
 
 // crypto library
+#include <TransistorNoiseSource.h>
 #include <SHA256.h>
 #include <RNG.h>
-#include <TransistorNoiseSource.h>
 
 // RF library
 #include <SPI.h>
@@ -19,8 +19,8 @@ const char fail = 0x00;
 
 // Crypto
 TransistorNoiseSource noise(A1);
-sha256 SHA256();
-const char* key = "super secret key"
+SHA256 hash;
+const char* key = "super secret key";
 
 int main() {
 
@@ -35,8 +35,9 @@ int main() {
   byte hmac[32];
 
   // Crypto
-  RNG.begin("MyApp 1.0", 500);
+  RNG.begin("Secure Button", 500);
   RNG.addNoiseSource(noise);
+  hash = SHA256();
     
   // Control
   int state = 1; // implemented as a finite-state machine
