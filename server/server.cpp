@@ -75,7 +75,7 @@ int main() {
 
           state = 4;
           // compute timeout time
-          long timeout_time = millis() + 250;
+          timeout_time = millis() + 250;
       }
 
       // listen for response
