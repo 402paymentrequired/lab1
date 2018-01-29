@@ -4,6 +4,10 @@
 // crypto library
 #include <SHA256.h>
 
+// I2C cap touch lib
+#include <Wire.h>
+#include "Adafruit_MPR121.h"
+
 // RF library
 #include <SPI.h>
 #include <nRF24L01.h>
@@ -15,10 +19,18 @@ const byte address[6] = "00001";
 const char pass = 0xFF;
 const char fail = 0x00;
 
+// Cap touch
+Adafruit_MPR121 cap = Adafruit_MPR121();
+uint16_t lasttouched = 0;
+uint16_t currtouched = 0;
+
 // Crypto
 SHA256 hash;
 const char* key = "super secret key";
 
+// setup()
+
+  
 int main() {
 
   // Radio
@@ -29,13 +41,40 @@ int main() {
   byte response[32];
   byte hmac[32];
 
+  // Cap touch
+  while (!Serial);   // needed to keep leonardo/micro from starting too fast
+  if (!cap.begin(0x5A)) {
+    Serial.println("MPR121 not found, check wiring?");
+    while (1);
+  }
+  Serial.println("MPR121 found!");
+
+
   // Control
   int state = 1; // implemented as a finite-state machine
   long timeout_time;
   long light_expire_time = 0;
-  bool is_button_pressed;
+  bool is_button_pressed = false;
 
   while(true) {
+
+    currtouched = cap.touched();
+
+    for (uint8_t i=0; i<12; i++) {
+    // it if *is* touched and *wasnt* touched before, alert!
+      if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
+        Serial.print(i); Serial.println(" touched");
+        is_button_pressed = true;
+      }
+      // if it *was* touched and now *isnt*, alert!
+      if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
+        Serial.print(i); Serial.println(" released");
+        is_button_pressed = false;
+      }
+    }
+
+    // reset our state
+    lasttouched = currtouched;
 
     // todo: set is_button_pressed
 
@@ -147,6 +186,8 @@ int main() {
         state = 0;
       }
     }
+
+    delay(50);
 
   }
 }
