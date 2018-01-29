@@ -11,6 +11,15 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
+// Neopixels
+#ifdef __AVR__
+  #include <avr/power.h>
+#endif
+// Pin for led's
+#define PIN 6
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRB + NEO_KHZ800);
+
+
 // Radio
 RF24 radio(3, 2);
 const byte address[6] = "00001";
@@ -33,6 +42,10 @@ int main() {
   byte challenge[32];
   byte response[32];
   byte hmac[32];
+
+  // LED
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
 
   // Crypto
   RNG.begin("Secure Button", 500);
@@ -132,18 +145,26 @@ int main() {
 
       // turn on light
       else if(state == 7) {
-        light_expire_time = millis() + 1000;
+        rainbow(10);
         radio.openReadingPipe(0, address);
         radio.startListening();        
         state = 1;
       }
 
-    if(millis() < light_expire_time) {
-      // todo: turn the light on
-    }
-
     // stir the RNG
     RNG.loop();
+    delay(50);
+  }
+}
 
+void rainbow(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256; j++) {
+    for(i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    strip.show();
+    delay(wait);
   }
 }
